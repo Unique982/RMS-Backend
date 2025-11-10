@@ -41,7 +41,32 @@ class Service {
 
   // delete
   static async deleteService(req: IExtendedRequest, res: Response) {
-    const userId = req.user?.id;
+    const { id } = req.params;
+    const exists = await sequelize.query(`SELECT id FROM service WHERE id =?`, {
+      type: QueryTypes.SELECT,
+      replacements: [id],
+    });
+    if (exists.length === 0)
+      return res.status(404).json({ message: "Service id not found!" });
+
+    await sequelize.query(`DELETE FROM service WHERE id = ?`, {
+      type: QueryTypes.DELETE,
+      replacements: [id],
+    });
+    res.status(200).json({ message: "Service delete successfully!" });
+  }
+  static async singleService(req: IExtendedRequest, res: Response) {
+    const { id } = req.params;
+    const exists = await sequelize.query(`SELECT id FROM service WHERE id =?`, {
+      type: QueryTypes.SELECT,
+      replacements: [id],
+    });
+    if (exists.length === 0) {
+      return res.status(404).json({ message: "Service id not found!" });
+    }
+    res
+      .status(200)
+      .json({ message: "Service delete successfully!", data: exists });
   }
 }
 

@@ -15,4 +15,17 @@ router
     asyncErrorHandle(Service.addService)
   )
   .get(asyncErrorHandle(Service.getService));
+
+router
+  .route("/id")
+  .delete(
+    Middleware.isLoggedIn,
+    Middleware.restrictTo(userRole.Admin),
+    asyncErrorHandle(Service.deleteService)
+  )
+  .get(
+    Middleware.isLoggedIn,
+    Middleware.restrictTo(userRole.Admin),
+    asyncErrorHandle(Service.singleService)
+  );
 export default router;
