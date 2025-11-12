@@ -48,6 +48,9 @@ import gallery from "./routes/admin/gallery/gallery.Route";
 import restoreData from "./routes/admin/Restore/restore.Route";
 import systemSetting from "./routes/admin/setting/setting.Route";
 
+// admin dashboard Overwie api
+import dashboardOver from "./routes/admin/dashboard/dashboard.Route";
+
 // customer
 import dashboardOverView from "./routes/customer/dashboardOverview/dashboardOverView.Route";
 import menuViwe from "./routes/customer/menu/menu.Route";
@@ -59,6 +62,10 @@ import ViewCategory from "./routes/customer/category/category.Route";
 // contact us
 import contactUs from "./routes/customer/contact/contact.Route";
 import tableBooking from "./routes/tableBooking/table.Route";
+
+// admin dashboard overview
+app.use("/dashboard/", dashboardOver);
+
 // admin api
 app.use("/api/auth/", authRouter);
 app.use("/api/reset/password", resetPassword);

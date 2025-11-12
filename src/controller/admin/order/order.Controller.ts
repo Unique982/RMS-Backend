@@ -132,7 +132,6 @@ class OrderController {
           discount: parseFloat(row.discount),
           final_amount: parseFloat(row.final_amount),
           status: row.status,
-          payment_method: row.payment_method,
           payment_status: row.payment_status,
           special_request: row.special_request,
           delivery_address: row.delivery_address,
@@ -205,7 +204,6 @@ class OrderController {
       o.discount,
       o.final_amount,
       o.status,
-      o.payment_method,
       o.payment_status,
       o.special_request,
       o.delivery_address,
@@ -252,7 +250,6 @@ class OrderController {
           discount: parseFloat(row.discount),
           final_amount: parseFloat(row.final_amount),
           status: row.status,
-          payment_method: row.payment_method,
           payment_status: row.payment_status,
           special_request: row.special_request,
           delivery_address: row.delivery_address,
@@ -285,13 +282,108 @@ class OrderController {
   }
   // update order
   static async updateOrder(req: IExtendedRequest, res: Response) {
-    //   getIO().emit("orderUpdated", {
-    //   order_id: id,
-    //   status,
-    //   payment_status,
-    //   discount,
-    //   items,
-    // });
+    const userId = req.user?.id;
+    const orderId = req.params.id;
+    const {
+      table_id,
+      order_type,
+      discount,
+      status,
+      payment_status,
+      special_request,
+      delivery_address,
+      items,
+    } = req.body;
+
+    if (!items || items.length === 0)
+      return res.status(400).json({ message: "Order Items are required" });
+
+    let total_amount = 0;
+
+    // Calculate total amount from menu_item table
+    for (let item of items) {
+      const menuItem: any = await sequelize.query(
+        `SELECT id, price FROM menu_items WHERE id=?`,
+        {
+          type: QueryTypes.SELECT,
+          replacements: [item.id],
+        }
+      );
+
+      if (!menuItem || menuItem.length === 0)
+        return res
+          .status(400)
+          .json({ message: `Menu item id ${item.id} not found` });
+
+      const menuPrice = parseFloat(menuItem[0].price);
+      total_amount += menuPrice * item.quantity;
+
+      item.price = menuPrice;
+    }
+
+    const final_amount = total_amount - (discount || 0);
+
+    // Update order
+    await sequelize.query(
+      `UPDATE orders SET 
+      table_id=?,
+      order_type=?,
+      total_amount=?,
+      discount=?,
+      final_amount=?,
+      status=?,
+      payment_status=?,
+      special_request=?,
+      delivery_address=?,
+      updated_at=NOW()
+   WHERE id=? AND user_id=?`,
+      {
+        type: QueryTypes.UPDATE,
+        replacements: [
+          table_id,
+          order_type,
+          total_amount,
+          discount || 0,
+          final_amount,
+          status,
+          payment_status,
+          special_request || null,
+          delivery_address || null,
+          orderId,
+          userId,
+        ],
+      }
+    );
+
+    // Delete old order items
+    await sequelize.query(`DELETE FROM order_items WHERE order_id=?`, {
+      type: QueryTypes.DELETE,
+      replacements: [orderId],
+    });
+
+    // Insert updated order items
+    for (let item of items) {
+      await sequelize.query(
+        `INSERT INTO order_items(order_id,menu_item_id,quantity,price,created_at,updated_at) 
+     VALUES(?,?,?,?,NOW(),NOW())`,
+        {
+          type: QueryTypes.INSERT,
+          replacements: [orderId, item.id, item.quantity, item.price],
+        }
+      );
+    }
+
+    // Emit via socket
+    getIO().emit("orderUpdated", {
+      order_id: orderId,
+      user_id: userId,
+      table_id: table_id,
+      total_amount: total_amount,
+      final_amount: final_amount,
+      items: items,
+    });
+
+    res.status(200).json({ message: "Order updated successfully!" });
   }
   // soft delete
   static async softDeleteOrder(req: IExtendedRequest, res: Response) {

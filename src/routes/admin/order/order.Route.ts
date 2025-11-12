@@ -28,6 +28,11 @@ router
     Middleware.isLoggedIn,
     Middleware.restrictTo(userRole.Admin),
     asyncErrorHandle(OrderController.deleteOrder)
+  )
+  .patch(
+    Middleware.isLoggedIn,
+    Middleware.restrictTo(userRole.Admin),
+    asyncErrorHandle(OrderController.updateOrder)
   );
 // order status update
 router

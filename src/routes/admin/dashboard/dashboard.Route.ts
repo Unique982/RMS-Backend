@@ -2,11 +2,15 @@ import express, { Router } from "express";
 import Middleware from "../../../middleware/middleware";
 import { userRole } from "../../../middleware/types/type";
 import asyncErrorHandle from "../../../services/asyncErrorhandle";
-import MyDashboardOwerView from "../../../controller/customer/dashboardOverviwe/dashboardOverView.Controller";
+import AdminDashboardOverView from "../../../controller/admin/dashboard/dashboard.Controller";
 const router: Router = express.Router();
 
 router
-  .route("/customer/overview")
-  .get(Middleware.isLoggedIn, Middleware.restrictTo(userRole.Customer));
+  .route("/count")
+  .get(
+    Middleware.isLoggedIn,
+    Middleware.restrictTo(userRole.Admin),
+    asyncErrorHandle(AdminDashboardOverView.getAllUser)
+  );
 
 export default router;

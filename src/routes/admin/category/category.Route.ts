@@ -13,11 +13,7 @@ router
     Middleware.restrictTo(userRole.Admin),
     asyncErrorHandle(Category.createCategory)
   )
-  .get(
-    Middleware.isLoggedIn,
-    Middleware.restrictTo(userRole.Admin),
-    asyncErrorHandle(Category.getCategory)
-  );
+  .get(asyncErrorHandle(Category.getCategory));
 
 // edit / delete / single
 router
