@@ -64,7 +64,7 @@ import contactUs from "./routes/customer/contact/contact.Route";
 import tableBooking from "./routes/tableBooking/table.Route";
 
 // admin dashboard overview
-app.use("/dashboard/", dashboardOver);
+app.use("/admin/dashboard/", dashboardOver);
 
 // admin api
 app.use("/api/auth/", authRouter);

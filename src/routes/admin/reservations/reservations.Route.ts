@@ -41,7 +41,7 @@ router
     Middleware.restrictTo(userRole.Admin),
     asyncErrorHandle(ReservationBooking.softDeleteReservation)
   );
-// soft delete
+// restore delete
 router
   .route("/restore/:id")
   .patch(

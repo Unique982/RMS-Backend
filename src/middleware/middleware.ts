@@ -22,7 +22,7 @@ class Middleware {
             return res.status(400).json({ messag: "Token invalid Vayo" });
           } else {
             const userData = await User.findByPk(resultaayo.id, {
-              attributes: ["id", "role"],
+              attributes: ["id", "role", "username"],
             });
 
             if (!userData) {
@@ -31,6 +31,7 @@ class Middleware {
               req.user = {
                 id: userData.id,
                 role: userData.role as userRole,
+                username: userData.username,
               };
 
               next();

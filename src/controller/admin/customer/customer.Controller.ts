@@ -51,5 +51,6 @@ class CustomerList {
     res.status(200).json({ messag: "Customer delete successfuly!" });
   }
 }
+``;
 
 export default CustomerList;

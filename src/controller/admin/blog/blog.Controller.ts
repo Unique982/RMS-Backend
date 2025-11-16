@@ -48,10 +48,13 @@ class Blog {
   // single
   static async singleBlog(req: IExtendedRequest, res: Response) {
     const { id } = req.params;
-    const exists = await sequelize.query(`SELECT * FROM blog WHERE id =?`, {
-      type: QueryTypes.SELECT,
-      replacements: [id],
-    });
+    const exists: any = await sequelize.query(
+      `SELECT * FROM blog WHERE id =?`,
+      {
+        type: QueryTypes.SELECT,
+        replacements: [id],
+      }
+    );
     if (exists.length === 0) {
       return res.status(404).json({ message: "Blog id not found!" });
     } else {

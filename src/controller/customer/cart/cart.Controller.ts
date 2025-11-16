@@ -62,7 +62,7 @@ class MyCart {
    WHERE id = ?`,
           {
             type: QueryTypes.UPDATE,
-            replacements: [quantity, existsItems.id],
+            replacements: [quantity, existsItems[0].id],
           }
         );
 
@@ -105,8 +105,7 @@ class MyCart {
   }
   // get
   static async getCart(req: IExtendedRequest, res: Response) {
-    const userId = req.user?.id || null;
-
+    const userId = req.user?.id;
     if (!userId) {
       // guest user
       return res.status(200).json({

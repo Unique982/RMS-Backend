@@ -113,13 +113,17 @@ class Authentication {
       const token = generatedJwtWebToken({
         id: userExists.id,
         role: userExists.role,
+        username: userExists.username,
       });
+      console.log("userExists:", userExists);
+
       res.status(200).json({
         message: "Login successfully",
         token: token,
         user: {
           id: userExists.id,
           role: userExists.role,
+          username: userExists.username,
         },
       });
     } catch (err) {

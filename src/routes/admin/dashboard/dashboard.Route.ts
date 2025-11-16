@@ -6,7 +6,7 @@ import AdminDashboardOverView from "../../../controller/admin/dashboard/dashboar
 const router: Router = express.Router();
 
 router
-  .route("/count")
+  .route("")
   .get(
     Middleware.isLoggedIn,
     Middleware.restrictTo(userRole.Admin),
