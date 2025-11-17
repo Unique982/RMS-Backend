@@ -24,7 +24,7 @@ export const getIO = () => io;
 io.on("connection", (socket) => {
   console.log("New Client connected:", socket.id);
 
-  socket.on("disconnect:", () => {
+  socket.on("disconnect", () => {
     console.log("Client Disconneted", socket.id);
   });
 });

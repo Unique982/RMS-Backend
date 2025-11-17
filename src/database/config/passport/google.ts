@@ -4,6 +4,7 @@ import { Strategy as FacebokStrategy } from "passport-facebook";
 import User from "../../models/users.model";
 import { config } from "dotenv";
 import mailSend from "../../../services/mailSend";
+import HelperNotification from "../../../controller/notification/notification.Controller";
 
 config();
 
@@ -72,7 +73,24 @@ passport.use(
 `,
           };
           await mailSend(mailInformation);
+
+          // CASE 1:  Registration Notification
+          await HelperNotification.createNotification({
+            title: "Registration Successful",
+            description: "Your account has been created via Google.",
+            user_role: "customer",
+            user_id: user.id,
+          });
+
+          return cb(null, user);
         }
+        // CASE 2: User Exists → LOGIN Case
+        await HelperNotification.createNotification({
+          title: "Login Successful",
+          description: "You have logged in successfully using Google.",
+          user_role: "customer",
+          user_id: user.id,
+        });
         return cb(null, user);
       } catch (err) {
         return cb(err, undefined);

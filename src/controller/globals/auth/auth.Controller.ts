@@ -10,6 +10,7 @@ import { IExtendedRequest, userRole } from "../../../middleware/types/type";
 import sequelize from "../../../database/connection";
 import { QueryTypes } from "sequelize";
 
+import HelperNotification from "../../notification/notification.Controller";
 interface OTP {
   otp: number | null;
   otp_exp: Date | null;
@@ -26,12 +27,11 @@ class Authentication {
     if (userExists)
       return res.status(400).json({ message: "This user already existing" });
     try {
-      await User.create({
+      const user = await User.create({
         username,
         email,
         password: bcrypt.hashSync(password, 12),
       });
-
       // sned email
       const mailInformation = {
         to: email,
@@ -86,7 +86,16 @@ class Authentication {
       };
       await mailSend(mailInformation);
 
-      res.status(200).json({ message: "User account created successfuly!" });
+      const notification = await HelperNotification.createNotification({
+        title: "Registration Successful",
+        description: "Welcome! You are registered as Customer.",
+        user_role: "customer",
+        user_id: user.id,
+      });
+      console.log("Notification created:", notification);
+      res.status(200).json({
+        message: "User account created successfuly!",
+      });
     } catch (err) {
       console.log(err);
       res.status(400).json({ message: "Something wrong!" });
@@ -116,6 +125,14 @@ class Authentication {
         username: userExists.username,
       });
       console.log("userExists:", userExists);
+
+      // create notification
+      const notification = await HelperNotification.createNotification({
+        title: "Login Successful",
+        description: "You are logged in successfully.",
+        user_role: userExists.role,
+        user_id: userExists.id,
+      });
 
       res.status(200).json({
         message: "Login successfully",
@@ -276,6 +293,13 @@ class Authentication {
     //
     userExists.password = bcrypt.hashSync(newPassword, 12);
     await userExists.save();
+    // notification create
+    const notification = await HelperNotification.createNotification({
+      title: "Password Change Successfully!",
+      description: "Your password has been updated successfully.",
+      user_role: userExists.role,
+      user_id: userExists.id,
+    });
     res.status(200).json({ message: "Password chnage successfully!" });
   }
 

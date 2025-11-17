@@ -17,6 +17,7 @@ import Payment from "./models/payment.model";
 import CartItem from "./models/cartItems.model";
 import Gallery from "./models/gallery.model";
 import Setting from "./models/setting.model";
+import Notification from "./models/notification.model";
 // load env
 config();
 
@@ -44,6 +45,10 @@ sequelize
 sequelize.sync({ alter: false }).then(() => {
   console.log("migrated successfully!");
 });
+
+// Notification <-> User
+User.hasMany(Notification, { foreignKey: "user_id" });
+Notification.belongsTo(User, { foreignKey: "user_id" });
 
 // relastion ship
 // User - Reservation

@@ -3,6 +3,7 @@ import Authentication from "../../../controller/globals/auth/auth.Controller";
 const router: Router = express.Router();
 import passport from "../../../database/config/passport/google";
 import asyncErrorHandle from "../../../services/asyncErrorhandle";
+import jwt from "jsonwebtoken";
 
 // regsiter
 router.route("/register").post(asyncErrorHandle(Authentication.userRegsiter));
@@ -22,10 +23,32 @@ router
   .route("/google")
   .get(passport.authenticate("google", { scope: ["profile", "email"] }));
 
-router
-  .route("/google/callback")
-  .get(passport.authenticate("google", { failureRedirect: "/" }), (req, res) =>
-    res.redirect("/dashboard")
-  );
+router.get(
+  "/google/callback",
+  passport.authenticate("google", { failureRedirect: "/" }),
+  async (req: any, res) => {
+    try {
+      // Fix: user exists or not
+      if (!req.user) {
+        return res.redirect("http://localhost:3000/?error=UserNotFound");
+      }
+
+      const user = req.user;
+
+      // Create JWT Token
+      const token = jwt.sign(
+        { id: user.id, email: user.email, role: user.role },
+        process.env.JWT_SECRET! as string,
+        { expiresIn: "7d" }
+      );
+
+      // Redirect to frontend with token
+      res.redirect(`http://localhost:3000/auth/success?token=${token}`);
+    } catch (error) {
+      console.error(error);
+      res.redirect("http://localhost:3000/?error=GoogleAuthFailed");
+    }
+  }
+);
 
 export default router;
