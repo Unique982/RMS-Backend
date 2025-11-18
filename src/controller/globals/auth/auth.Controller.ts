@@ -89,7 +89,6 @@ class Authentication {
       const notification = await HelperNotification.createNotification({
         title: "Registration Successful",
         description: "Welcome! You are registered as Customer.",
-        user_role: "customer",
         user_id: user.id,
       });
       console.log("Notification created:", notification);
@@ -130,7 +129,7 @@ class Authentication {
       const notification = await HelperNotification.createNotification({
         title: "Login Successful",
         description: "You are logged in successfully.",
-        user_role: userExists.role,
+
         user_id: userExists.id,
       });
 
@@ -297,7 +296,6 @@ class Authentication {
     const notification = await HelperNotification.createNotification({
       title: "Password Change Successfully!",
       description: "Your password has been updated successfully.",
-      user_role: userExists.role,
       user_id: userExists.id,
     });
     res.status(200).json({ message: "Password chnage successfully!" });
@@ -329,8 +327,21 @@ class Authentication {
     );
     res.status(200).json({ message: "Profile updated successfull!" });
   }
+
+  // user logout
+  static async userLogout(req: IExtendedRequest, res: Response) {
+    const userId = req.user.id;
+    if (!userId) {
+      return res.status(400).json({ message: "Not logged In" });
+    }
+    // notification save
+    const notification = await HelperNotification.createNotification({
+      title: "Logout Successfully!",
+      description: `${req.user.username} logged out successfully`,
+
+      user_id: userId,
+    });
+    res.status(200).json({ message: "Logout successfully", notification });
+  }
 }
 export default Authentication;
-
-// register
-// forget password

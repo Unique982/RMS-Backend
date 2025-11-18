@@ -8,7 +8,7 @@ import {
   Default,
   ForeignKey,
 } from "sequelize-typescript";
-import { userRole } from "../../middleware/types/type";
+
 import User from "./users.model";
 
 export enum Type {
@@ -39,13 +39,6 @@ class Notification extends Model {
     defaultValue: "general",
   })
   declare type: Type;
-
-  @Column({
-    type: DataType.ENUM("admin", "customer"),
-    allowNull: false,
-    defaultValue: "customer",
-  })
-  declare user_role: userRole;
 
   @ForeignKey(() => User)
   @Column({ type: DataType.INTEGER, allowNull: true })

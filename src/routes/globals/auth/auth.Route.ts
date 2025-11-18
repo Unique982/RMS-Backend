@@ -9,6 +9,8 @@ import jwt from "jsonwebtoken";
 router.route("/register").post(asyncErrorHandle(Authentication.userRegsiter));
 // login
 router.route("/login").post(asyncErrorHandle(Authentication.userLogin));
+// logout
+router.route("/logout").post(asyncErrorHandle(Authentication.userLogout));
 // forget password
 router.route("/forget").post(asyncErrorHandle(Authentication.forgetPassword));
 // otp

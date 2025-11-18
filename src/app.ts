@@ -59,6 +59,9 @@ import myOrder from "./routes/customer/myOrder/order.Route";
 import myCart from "./routes/customer/cart/cart.Route";
 import ViewCategory from "./routes/customer/category/category.Route";
 
+// notification
+import notificationSystem from "./routes/notification/notification.Route";
+
 // contact us
 import contactUs from "./routes/customer/contact/contact.Route";
 import tableBooking from "./routes/tableBooking/table.Route";
@@ -66,6 +69,8 @@ import tableBooking from "./routes/tableBooking/table.Route";
 // admin dashboard overview
 app.use("/admin/dashboard/", dashboardOver);
 
+// notification
+app.use("/api/notification", notificationSystem);
 // admin api
 app.use("/api/auth/", authRouter);
 app.use("/api/reset/password", resetPassword);

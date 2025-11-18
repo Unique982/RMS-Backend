@@ -8,5 +8,6 @@ router
   .get(asyncErrorHandle(MyCart.getCart));
 
 router.route("/:id").delete(asyncErrorHandle(MyCart.deleteCart));
+router.route("/merge").post(asyncErrorHandle(MyCart.mergeGuestCart));
 
 export default router;

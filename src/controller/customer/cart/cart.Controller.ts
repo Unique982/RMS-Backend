@@ -154,6 +154,66 @@ class MyCart {
     });
     res.status(200).json({ message: "Cart delete successfull" });
   }
+  static async mergeGuestCart(req: IExtendedRequest, res: Response) {
+    const userId = req.user?.id;
+    const { items } = req.body;
+
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    for (const item of items) {
+      const [cart]: any = await sequelize.query(
+        `SELECT id FROM carts WHERE user_id = ?`,
+        {
+          type: QueryTypes.SELECT,
+          replacements: [userId],
+        }
+      );
+      let cartId = cart?.id;
+      if (!cartId) {
+        const [newCartId] = await sequelize.query(
+          `INSERT INTO carts(user_id, createdAt, updatedAt) VALUES(?, NOW(), NOW())`,
+          { type: QueryTypes.INSERT, replacements: [userId] }
+        );
+        cartId = newCartId;
+      }
+
+      const existsItems: any = await sequelize.query(
+        `SELECT id FROM cart_items WHERE cart_id=? AND menu_item_id=?`,
+        { type: QueryTypes.SELECT, replacements: [cartId, item.menu_item_id] }
+      );
+
+      if (existsItems.length > 0) {
+        await sequelize.query(
+          `UPDATE cart_items SET quantity = quantity + ? WHERE id=?`,
+          {
+            type: QueryTypes.UPDATE,
+            replacements: [item.quantity, existsItems[0].id],
+          }
+        );
+      } else {
+        await sequelize.query(
+          `INSERT INTO cart_items(cart_id, menu_item_id, quantity, createdAt, updatedAt) VALUES(?,?,?,NOW(),NOW())`,
+          {
+            type: QueryTypes.INSERT,
+            replacements: [cartId, item.menu_item_id, item.quantity],
+          }
+        );
+      }
+    }
+
+    const cartData = await sequelize.query(
+      `SELECT ci.id as cart_item_id, ci.menu_item_id, ci.quantity, mi.name, mi.price, mi.image_url
+     FROM cart_items ci
+     JOIN carts c ON ci.cart_id=c.id
+     JOIN menu_items mi ON ci.menu_item_id=mi.id
+     WHERE c.user_id=?`,
+      { type: QueryTypes.SELECT, replacements: [userId] }
+    );
+
+    localStorage.removeItem("guest_cart");
+
+    res.status(200).json({ message: "Guest cart merged", data: cartData });
+  }
 }
 
 export default MyCart;

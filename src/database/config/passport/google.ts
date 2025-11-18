@@ -78,7 +78,6 @@ passport.use(
           await HelperNotification.createNotification({
             title: "Registration Successful",
             description: "Your account has been created via Google.",
-            user_role: "customer",
             user_id: user.id,
           });
 
@@ -88,7 +87,7 @@ passport.use(
         await HelperNotification.createNotification({
           title: "Login Successful",
           description: "You have logged in successfully using Google.",
-          user_role: "customer",
+
           user_id: user.id,
         });
         return cb(null, user);
