@@ -4,10 +4,21 @@ import sequelize from "../../../database/connection";
 import { QueryTypes } from "sequelize";
 import { getIO } from "../../../../server";
 
+const convertTo24Hour = (time12: string) => {
+  const [time, modifier] = time12.split(" ");
+  let [hours, minutes] = time.split(":").map(Number);
+
+  if (modifier === "PM" && hours !== 12) hours += 12;
+  if (modifier === "AM" && hours === 12) hours = 0;
+
+  return `${hours.toString().padStart(2, "0")}:${minutes
+    .toString()
+    .padStart(2, "0")}:00`;
+};
 class ReservationBooking {
   // create Reservation
   static async createReservation(req: IExtendedRequest, res: Response) {
-    // const userId = req.user?.id;
+    const userId = req.user?.id || null;
     const {
       user_id,
       table_id,
@@ -16,6 +27,8 @@ class ReservationBooking {
       reservation_time,
       specailRequest,
       status,
+      name,
+      phoneNumber,
     } = req.body;
 
     //
@@ -27,6 +40,7 @@ class ReservationBooking {
       !specailRequest
     )
       return res.status(400).json({ message: "All field required" });
+
     const tableStatus = await sequelize.query(
       `SELECT id, tableStatus,seats FROM tables WHERE id = ?`,
       {
@@ -34,6 +48,7 @@ class ReservationBooking {
         replacements: [table_id],
       }
     );
+
     const table = (tableStatus as any)[0];
     if (table.tableStatus === "unavailable")
       return res
@@ -45,26 +60,37 @@ class ReservationBooking {
       return res.status(400).json({
         message: `Sorry, this table can accommodate only ${table.seats} guests`,
       });
+    const existingPhone = await sequelize.query(
+      `SELECT id FROM reservations 
+   WHERE phoneNumber = ?
+   AND reservation_date = ?`,
+      {
+        type: QueryTypes.SELECT,
+        replacements: [phoneNumber, reservation_date],
+      }
+    );
 
+    if (existingPhone.length > 0) {
+      return res.status(400).json({
+        message: "This phone number already has a booking on this date.",
+      });
+    }
+
+    const time24 = convertTo24Hour(reservation_time);
     // user select garay ko tyo date ma kunai user la table booked garay ko xa ki nai
 
     const existingReservation = await sequelize.query(
       `SELECT id FROM reservations WHERE table_id = ?
-  AND reservation_date = ?
-  AND status IN ('pending','booking')
-  AND reservation_time < ADDTIME(?, '01:00:00')
-  AND ADDTIME(reservation_time, '01:00:00') > ? `,
+   AND reservation_date = ?
+   AND status IN ('pending','booking')
+   AND reservation_time < ADDTIME(?, '01:00:00')
+   AND ADDTIME(reservation_time, '01:00:00') > ?`,
       {
         type: QueryTypes.SELECT,
-        replacements: [
-          user_id,
-          table_id,
-          reservation_date,
-          reservation_time,
-          reservation_time,
-        ],
+        replacements: [table_id, reservation_date, time24, time24],
       }
     );
+
     if (reservation_time < "10:00:00" || reservation_time >= "20:00:00")
       return res.status(400).json({
         message: "Reservation time must be between 10:00 AM  and 08:00 Pm",
@@ -78,47 +104,55 @@ class ReservationBooking {
     // insert query
 
     const [result]: any = await sequelize.query(
-      `INSERT INTO reservations(user_id,table_id,guests,reservation_date,reservation_time,status,specailRequest,createdAt,updatedAt)VALUES(?,?,?,?,?,?,?,NOW(),NOW())`,
+      `INSERT INTO reservations(user_id,table_id,guests,reservation_date,reservation_time,status,specailRequest,createdAt,updatedAt,name,phoneNumber)VALUES(?,?,?,?,?,?,?,NOW(),NOW(),?,?)`,
       {
         type: QueryTypes.INSERT,
         replacements: [
-          user_id,
+          userId,
           table_id,
           guests,
           reservation_date,
-          reservation_time,
+          time24,
           status,
           specailRequest,
+          name,
+          phoneNumber,
         ],
       }
     );
     console.log();
     getIO().emit("reservationAdded", {
       id: result,
-      user_id,
+      userId,
       table_id,
       guests,
       reservation_date,
       reservation_time,
       status,
       specailRequest,
+      name,
+      phoneNumber,
     });
     res.status(200).json({ message: "Reservation Booking successfully!" });
   }
   // get Reservation
+
   static async getReservation(req: IExtendedRequest, res: Response) {
-    const reservationData = await sequelize.query(
-      `SELECT r.*,  u.username, t.tableNumber
+    const userId = req.user?.id;
+    const reservationData: any = await sequelize.query(
+      `SELECT r.*, u.username, t.tableNumber
 FROM reservations r
-JOIN users u ON r.user_id = u.id
-JOIN tables t ON r.table_id = t.id WHERE r.deleted_at IS NULL
-   ORDER BY r.createdAt DESC`,
-      {
-        type: QueryTypes.SELECT,
-      }
+LEFT JOIN users u ON r.user_id = u.id
+LEFT JOIN tables t ON r.table_id = t.id
+ORDER BY r.createdAt DESC`,
+      { type: QueryTypes.SELECT }
     );
-    res.status(200).json({ message: "Fetch all data", data: reservationData });
+
+    res
+      .status(200)
+      .json({ message: "Fetch all reservations", data: reservationData });
   }
+
   // delete Reservation
   static async deleteReservation(req: IExtendedRequest, res: Response) {
     const { id } = req.params;
@@ -163,13 +197,14 @@ JOIN tables t ON r.table_id = t.id WHERE r.deleted_at IS NULL
   static async updateReservation(req: IExtendedRequest, res: Response) {
     const { id } = req.params;
     const {
-      userId,
       table_id,
       guests,
       reservation_date,
       reservation_time,
       specailRequest,
       status,
+      name,
+      phoneNumber,
     } = req.body;
 
     //
@@ -242,8 +277,7 @@ JOIN tables t ON r.table_id = t.id WHERE r.deleted_at IS NULL
     // update querty
 
     await sequelize.query(
-      `UPDATE reservations  SET table_id=?,guests=?,reservation_date=?,reservation_time=?,
-      status=?,specailRequest=?,updatedAt=NOW() WHERE id=?`,
+      `UPDATE reservations  SET table_id=?,guests=?,reservation_date=?,reservation_time=?,status=?,specailRequest=?, name=?,phoneNumber=?,updatedAt=NOW() WHERE id=?`,
       {
         type: QueryTypes.UPDATE,
         replacements: [
@@ -253,6 +287,8 @@ JOIN tables t ON r.table_id = t.id WHERE r.deleted_at IS NULL
           reservation_time,
           status,
           specailRequest,
+          name,
+          phoneNumber,
           id,
         ],
       }

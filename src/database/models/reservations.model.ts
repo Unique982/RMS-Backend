@@ -46,7 +46,7 @@ class Reservation extends Model {
   @Column({ type: DataType.DATEONLY, allowNull: false })
   declare reservation_date: string;
 
-  @Column({ type: DataType.TIME, allowNull: false })
+  @Column({ type: DataType.STRING, allowNull: false })
   declare reservation_time: string;
 
   @Column({

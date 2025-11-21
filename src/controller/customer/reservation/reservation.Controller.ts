@@ -2,12 +2,23 @@ import { QueryTypes } from "sequelize";
 import sequelize from "../../../database/connection";
 import { IExtendedRequest } from "../../../middleware/types/type";
 import { Response } from "express";
+const convertTo24Hour = (time12: string) => {
+  const [time, modifier] = time12.split(" "); // e.g., "2:00 PM"
+  let [hours, minutes] = time.split(":").map(Number);
+
+  if (modifier === "PM" && hours !== 12) hours += 12;
+  if (modifier === "AM" && hours === 12) hours = 0;
+
+  return `${hours.toString().padStart(2, "0")}:${minutes
+    .toString()
+    .padStart(2, "0")}:00`;
+};
 class ReservationTable {
   static async createReservation(req: IExtendedRequest, res: Response) {
     const userId = req.user?.id;
     const {
       name,
-      phone,
+      phoneNumber,
       table_id,
       guests,
       reservation_date,
@@ -19,7 +30,7 @@ class ReservationTable {
     //
     if (
       !name ||
-      !phone ||
+      !phoneNumber ||
       !table_id ||
       !guests ||
       !reservation_date ||
@@ -28,6 +39,7 @@ class ReservationTable {
     )
       return res.status(400).json({ message: "All field required" });
     console.log(req.body);
+    const time24 = convertTo24Hour(reservation_time);
     const tableStatus = await sequelize.query(
       `SELECT id, tableStatus,seats FROM tables WHERE id = ?`,
       {
@@ -48,7 +60,6 @@ class ReservationTable {
       });
 
     // user select garay ko tyo date ma kunai user la table booked garay ko xa ki nai
-
     const existingReservation = await sequelize.query(
       `SELECT id FROM reservations WHERE table_id = ?
   AND reservation_date = ?
@@ -57,13 +68,7 @@ class ReservationTable {
   AND ADDTIME(reservation_time, '01:00:00') > ? `,
       {
         type: QueryTypes.SELECT,
-        replacements: [
-          userId,
-          table_id,
-          reservation_date,
-          reservation_time,
-          reservation_time,
-        ],
+        replacements: [userId, table_id, reservation_date, time24, time24],
       }
     );
     if (reservation_time < "10:00:00" || reservation_time >= "20:00:00")
@@ -76,10 +81,26 @@ class ReservationTable {
         message: "Sorry, this table is already booked for that date & time",
       });
 
+    const existingPhone = await sequelize.query(
+      `SELECT id  FROM reservations
+     WHERE phoneNumber = ?
+     AND reservation_date = ?`,
+      {
+        type: QueryTypes.SELECT,
+        replacements: [phoneNumber, reservation_date],
+      }
+    );
+
+    if (existingPhone.length > 0) {
+      return res.status(400).json({
+        message: "This phone number already has a booking on this date.",
+      });
+    }
+
     // insert query
 
     await sequelize.query(
-      `INSERT INTO reservations(user_id,table_id,guests,reservation_date,reservation_time,status,specailRequest,createdAt,updatedAt)VALUES(?,?,?,?,?,?,?,NOW(),NOW())`,
+      `INSERT INTO reservations(user_id,table_id,guests,reservation_date,reservation_time,status,specailRequest,createdAt,updatedAt)VALUES(?,?,?,?,?,?,?,NOW(),NOW(),?,?)`,
       {
         type: QueryTypes.INSERT,
         replacements: [
@@ -87,9 +108,11 @@ class ReservationTable {
           table_id,
           guests,
           reservation_date,
-          reservation_time,
+          time24,
           status,
           specailRequest,
+          name,
+          phoneNumber,
         ],
       }
     );

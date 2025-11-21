@@ -7,7 +7,7 @@ class MyCart {
   static async createCart(req: IExtendedRequest, res: Response) {
     const userId = req.user?.id || null;
     const { menu_item_id, quantity } = req.body;
-    if (!quantity || !menu_item_id) {
+    if (!quantity || !menu_item_id || quantity < 1) {
       return res
         .status(400)
         .json({ message: "Please provide quantity and product" });
@@ -22,6 +22,12 @@ class MyCart {
     );
     if (!menuItems || menuItems.length === 0) {
       return res.status(404).json({ message: "Menu Items not found!" });
+    }
+    if (!userId) {
+      return res.status(200).json({
+        message: "Item added to guest cart",
+        cartItem: { menu_item_id, quantity, ...menuItems[0] },
+      });
     }
     // check if user alerdy cart or not
     const [cart]: any = await sequelize.query(
@@ -213,6 +219,30 @@ class MyCart {
     localStorage.removeItem("guest_cart");
 
     res.status(200).json({ message: "Guest cart merged", data: cartData });
+  }
+  static async updateCart(req: IExtendedRequest, res: Response) {
+    const userId = req.user?.id;
+    const cartItemId = req.params.id;
+    const { quantity } = req.body;
+
+    if (!quantity || quantity < 1)
+      return res.status(400).json({ message: "Invalid quantity" });
+
+    const [item]: any = await sequelize.query(
+      `SELECT ci.id FROM cart_items ci
+     JOIN carts c ON ci.cart_id = c.id
+     WHERE ci.id = ? AND c.user_id = ?`,
+      { type: QueryTypes.SELECT, replacements: [cartItemId, userId] }
+    );
+
+    if (!item) return res.status(404).json({ message: "Cart item not found" });
+
+    await sequelize.query(
+      `UPDATE cart_items SET quantity = ?, updatedAt = NOW() WHERE id = ?`,
+      { type: QueryTypes.UPDATE, replacements: [quantity, cartItemId] }
+    );
+
+    res.status(200).json({ message: "Cart updated successfully" });
   }
 }
 

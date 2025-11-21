@@ -8,16 +8,17 @@ class Service {
     const { serviceTitle, serviceDescription } = req.body;
     const serviceIcon = req.file ? req.file.path : null;
 
-    if (!serviceTitle || !serviceDescription || !serviceIcon)
+    if (!serviceTitle || !serviceDescription || !serviceIcon) {
       return res.status(400).json("All filed are required");
+    }
 
     // check duplicate
-    const exists = await sequelize.query(`SELECT * FROM service LIMIT 7 `, {
+    const exists = await sequelize.query(`SELECT * FROM service LIMIT 8 `, {
       type: QueryTypes.SELECT,
     });
-    if (exists.length > 0)
+    if (exists.length > 0) {
       return res.status(400).json("Already exists service");
-
+    }
     // insert query
     await sequelize.query(
       `INSERT INTO service(serviceIcon,serviceTitle,serviceDescription,createdAt,updatedAt) VALUES(?,?,?,NOW(),NOW())`,
@@ -67,6 +68,43 @@ class Service {
     res
       .status(200)
       .json({ message: "Service delete successfully!", data: exists });
+  }
+
+  static async updateService(req: IExtendedRequest, res: Response) {
+    const { id } = req.params;
+    const { serviceTitle, serviceDescription } = req.body;
+    const serviceIcon = req.file ? req.file.path : null;
+
+    if (!serviceTitle || !serviceDescription) {
+      return res.status(400).json("ID, Title, and Description are required");
+    }
+
+    const exists = await sequelize.query(`SELECT * FROM service WHERE id = ?`, {
+      type: QueryTypes.SELECT,
+      replacements: [id],
+    });
+
+    if (exists.length === 0) {
+      return res.status(404).json("Service not found");
+    }
+
+    // update query
+    await sequelize.query(
+      `UPDATE service 
+     SET serviceTitle = ?, 
+         serviceDescription = ?, 
+         ${serviceIcon ? "serviceIcon = ?," : ""} 
+         updatedAt = NOW() 
+     WHERE id = ?`,
+      {
+        type: QueryTypes.UPDATE,
+        replacements: serviceIcon
+          ? [serviceTitle, serviceDescription, serviceIcon, id]
+          : [serviceTitle, serviceDescription, id],
+      }
+    );
+
+    res.status(200).json({ message: "Updated Successfully" });
   }
 }
 

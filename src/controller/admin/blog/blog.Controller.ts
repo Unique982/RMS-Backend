@@ -22,9 +22,12 @@ class Blog {
 
   // get all blog
   static async allBlogList(req: IExtendedRequest, res: Response) {
-    const allBlog = await sequelize.query(`SELECT * FROM blog`, {
-      type: QueryTypes.SELECT,
-    });
+    const allBlog = await sequelize.query(
+      `SELECT * FROM blog ORDER BY id DESC`,
+      {
+        type: QueryTypes.SELECT,
+      }
+    );
     res.status(200).json({ message: "Fetch All blog", data: allBlog });
   }
 
@@ -73,13 +76,13 @@ class Blog {
     if (exists.length === 0)
       return res.status(404).json({ message: "Blog id not found!" });
     const { blogTitle, blogDescription, blogCategory } = req.body;
-    if (!blogTitle || !blogDescription || !blogCategory)
+    if (!blogTitle || !blogDescription)
       return res.status(400).json({ message: "All field required" });
     const blogImage = req.file ? req.file.path : null;
 
     // update
     await sequelize.query(
-      `UPDATE blog SET blogTitle=?,blogDescription=?,blogCategory=?,blogImage=?,updatedAt=NOW() WHERE id =?`,
+      `UPDATE blog SET blogTitle=?,blogDescription=?,blogImage=?,blogCategory=?,updatedAt=NOW() WHERE id =?`,
       {
         type: QueryTypes.UPDATE,
         replacements: [blogTitle, blogDescription, blogImage, blogCategory, id],

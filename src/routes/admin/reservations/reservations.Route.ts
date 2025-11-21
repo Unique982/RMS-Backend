@@ -12,7 +12,11 @@ router
     Middleware.restrictTo(userRole.Admin),
     asyncErrorHandle(ReservationBooking.createReservation)
   )
-  .get(asyncErrorHandle(ReservationBooking.getReservation));
+  .get(
+    Middleware.isLoggedIn,
+    Middleware.restrictTo(userRole.Admin),
+    asyncErrorHandle(ReservationBooking.getReservation)
+  );
 
 // delete/single/update
 router

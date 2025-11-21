@@ -17,11 +17,16 @@ router
   .get(asyncErrorHandle(Service.getService));
 
 router
-  .route("/id")
+  .route("/:id")
   .delete(
     Middleware.isLoggedIn,
     Middleware.restrictTo(userRole.Admin),
     asyncErrorHandle(Service.deleteService)
+  )
+  .patch(
+    Middleware.isLoggedIn,
+    Middleware.restrictTo(userRole.Admin),
+    asyncErrorHandle
   )
   .get(
     Middleware.isLoggedIn,
