@@ -24,12 +24,7 @@ router
     Middleware.restrictTo(userRole.Admin),
     asyncErrorHandle(Gallery.deleteImage)
   )
-  .patch(
-    Middleware.isLoggedIn,
-    Middleware.restrictTo(userRole.Admin),
-    upload.array("image", 30),
-    asyncErrorHandle(Gallery.updateImage)
-  )
+
   .get(
     Middleware.isLoggedIn,
     Middleware.restrictTo(userRole.Admin),

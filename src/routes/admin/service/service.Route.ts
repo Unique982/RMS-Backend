@@ -26,7 +26,7 @@ router
   .patch(
     Middleware.isLoggedIn,
     Middleware.restrictTo(userRole.Admin),
-    asyncErrorHandle
+    asyncErrorHandle(Service.updateService)
   )
   .get(
     Middleware.isLoggedIn,
