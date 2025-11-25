@@ -29,8 +29,14 @@ class CartItem extends Model {
   @Column({ type: DataType.INTEGER, allowNull: false })
   declare menu_item_id: number;
 
-  @Column({ type: DataType.INTEGER, allowNull: false })
+  @Column({ type: DataType.INTEGER, allowNull: false, defaultValue: 1 })
   declare quantity: number;
+
+  @BelongsTo(() => Cart)
+  cart?: Cart;
+
+  @BelongsTo(() => MenuItem)
+  menuItem?: MenuItem;
 }
 
 export default CartItem;

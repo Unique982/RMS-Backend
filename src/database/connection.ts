@@ -64,14 +64,10 @@ Reservation.belongsTo(Tables, { foreignKey: "table_id" });
 Category.hasMany(MenuItem, { foreignKey: "category_id" });
 MenuItem.belongsTo(Category, { foreignKey: "category_id" });
 
-// order and customer realtion
-// order and table relation\
-
 // user to order
 User.hasMany(Order, { foreignKey: "user_id" });
 Order.belongsTo(User, { foreignKey: "user_id" });
 
-// table to order
 // Table ↔ Order
 Tables.hasMany(Order, { foreignKey: "table_id" });
 Order.belongsTo(Tables, { foreignKey: "table_id" });

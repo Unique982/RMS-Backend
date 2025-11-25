@@ -10,6 +10,7 @@ import {
   HasMany,
 } from "sequelize-typescript";
 import User from "./users.model";
+import CartItem from "./cartItems.model";
 
 @Table({
   tableName: "carts",
@@ -23,7 +24,7 @@ class Cart extends Model {
 
   @ForeignKey(() => User)
   @Column({ type: DataType.INTEGER, allowNull: true })
-  declare user_id: number;
+  declare user_id: number | null;
 }
 
 export default Cart;
